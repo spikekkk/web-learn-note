@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<script src="./react/react.development.js"></script>
+<script src="./react/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    /**
+     * 创建虚拟 DOM 结构
+     * @param {type} 标签名
+     * @param {props} 属性对象
+     * @param {children} 子节点
+     * @return {element} 虚拟 DOM
+     */
+
+    function createElement(type, props, ...children) {
+      return {
+        type,
+        props: {
+          ...props,
+          children: children.map((child) =>
+            typeof child === "object" ? child : createTextElement(child)
+          ),
+        },
+      }
+    }
+
+    /**
+     * 创建文本节点
+     * @param {text} 文本值
+     * @return {element} 虚拟 DOM
+     */
+
+    function createTextElement(text) {
+      return {
+        type: "TEXT_ELEMENT",
+        props: {
+          nodeValue: text,
+          children: [],
+        },
+      }
+    }
+
+
+    /**
+     * 将虚拟DOM添加到真实DOM中
+     * @param {element} 虚拟dom
+     * @param {container} 真实dom
+     */
+    function render(element, container) {
+      // 判断是否为文本 or Dom元素
+      const dom = element.type === 'TEXT_ELEMENT' ? document.createTextNode("") : document.createElement(element.type)
+
+      // 添加element-props
+      // 判断这个key不是children
+      const isProperty = key => key !== 'children'
+      Object.keys(element.props).filter(isProperty).forEach(name => {
+        console.log('name-', name)
+        dom[name] = element.props[name]
+      })
+      container.appendChild(dom)
+      // 将element的children添加到都没
+      element.props.children.forEach(child => render(child, dom))
+    }
+    // 下一个工作单元
+    let nextUnitOfWork = null
+    /**
+     * workLoop 工作循环函数
+     * @param {deadline} 截止时间
+     */
+    function workLoop(deadline) {
+      let shouldYield = false;
+      // 如果存在下一个工作单元，且没有优先级更高的其他工作时，循环执行
+      while (nextUnitOfWork && !shouldYield) {
+        nextUnitOfWork = performUnitOfWork(nextUnitOfWork)
+
+        // 如果截止时间快到了，停止工作循环函数--少于1s
+        shouldYield = deadline.timeRemaining() < 1
+      }
+      // 通知浏览器空闲时间执行workloop
+      requestIdelCallback(workLoop)
+    }
+    // 通知浏览器空闲时间执行workloop
+    requestIdleCallback(workLoop)
+    // 执行单元事件，并返回下一个单元事件
+    function performUnitOfWork(nextUnitOfWork) {
+      //TODO
+    }
+
+
+    const myReact = {
+      createElement,
+      render
+    }
+    /** @jsx myReact.createElement */
+    const JSX = <div id='foo'>
+      kkk
+      <span class="child" style="color:red">children</span>
+    </div>
+
+
+    console.log(myReact.render(JSX, document.getElementById('root')))
+
+
+  </script>
+
+</body>
+
+
+<script>
+
+</script>
+
+</html>

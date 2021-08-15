@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<script src="./react/react.development.js"></script>
+<script src="./react/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    /**
+     * 创建虚拟 DOM 结构
+     * @param {type} 标签名
+     * @param {props} 属性对象
+     * @param {children} 子节点
+     * @return {element} 虚拟 DOM
+     */
+
+    function createElement(type, props, ...children) {
+      return {
+        type,
+        props: {
+          ...props,
+          children: children.map((child) =>
+            typeof child === "object" ? child : createTextElement(child)
+          ),
+        },
+      }
+    }
+
+    /**
+     * 创建文本节点
+     * @param {text} 文本值
+     * @return {element} 虚拟 DOM
+     */
+
+    function createTextElement(text) {
+      return {
+        type: "TEXT_ELEMENT",
+        props: {
+          nodeValue: text,
+          children: [],
+        },
+      }
+    }
+
+    const Didact = {
+      createElement,
+    }
+
+    const element = Didact.createElement(
+      "div",
+      { id: "foo" },
+      Didact.createElement("a", null, "bar"),
+      Didact.createElement("b")
+    )
+    // 创建JSX
+    /** @jsx Didact.createElement */
+    const elementJSX = (
+      <div id="foo">
+        <a>bar</a>
+        <b></b>
+      </div>
+    )
+
+    console.log('jsX', elementJSX)
+
+  </script>
+
+</body>
+
+
+<script>
+
+</script>
+
+</html>

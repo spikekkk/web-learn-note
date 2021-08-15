@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<script src="./react/react.development.js"></script>
+<script src="./react/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    /**
+     * 创建虚拟 DOM 结构
+     * @param {type} 标签名
+     * @param {props} 属性对象
+     * @param {children} 子节点
+     * @return {element} 虚拟 DOM
+     */
+
+    function createElement(type, props, ...children) {
+      return {
+        type,
+        props: {
+          ...props,
+          children: children.map((child) =>
+            typeof child === "object" ? child : createTextElement(child)
+          ),
+        },
+      }
+    }
+
+    /**
+     * 创建文本节点
+     * @param {text} 文本值
+     * @return {element} 虚拟 DOM
+     */
+
+    function createTextElement(text) {
+      return {
+        type: "TEXT_ELEMENT",
+        props: {
+          nodeValue: text,
+          children: [],
+        },
+      }
+    }
+
+
+    /**
+     * 将虚拟DOM添加到真实DOM中
+     * @param {element} 虚拟dom
+     * @param {container} 真实dom
+     */
+    function render(element, container) {
+      // 判断是否为文本 or Dom元素
+      const dom = element.type === 'TEXT_ELEMENT' ? document.createTextNode("") : document.createElement(element.type)
+
+      // 添加element-props
+      // 判断这个key不是children
+      const isProperty = key => key !== 'children'
+      Object.keys(element.props).filter(isProperty).forEach(name => {
+        dom[name] = element.props[name]
+        console.log('name', name)
+      })
+      container.appendChild(dom)
+      // 将element的children添加到都没
+      element.props.children.forEach(child => render(child, dom))
+    }
+
+    const myReact = {
+      createElement,
+      render
+    }
+    /** @jsx myReact.createElement */
+    const JSX = <div id='foo'>
+      kkk
+      <span class="child" style="color:red">children</span>
+    </div>
+
+    console.log('JSX', JSX)
+    console.log(myReact.render(JSX, document.getElementById('root')))
+
+
+  </script>
+
+</body>
+
+
+<script>
+
+</script>
+
+</html>
