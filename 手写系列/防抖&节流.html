@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>节流&防抖</title>
+  <style>
+    #app {
+      background-color: red;
+      width: 100px;
+      height: 9000px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+
+  </div>
+  <script>
+    // 1. 节流:fun固定频率执行,固定时间内只能执行一次
+    // 每一秒只触发一次
+    function throttle(fn, timer = 1000) {
+      let prevTime = new Date()
+      return function (...args) {
+        let nowTime = new Date()
+        if (nowTime - prevTime > timer) {
+          fn.apply(this, args)
+          prevTime = nowTime
+        }
+      }
+    }
+
+    //2. 防抖: 类似公交车-->固定时间发车-->有人上-->时间重读-->没人上-->时间到了发动
+    function debounce(fn, times = 1000) {
+      let timerOut;
+      return function (...args) {
+        if (timerOut) clearTimeout(timerOut)
+        timerOut = setTimeout(() => {
+          fn.apply(this, args)
+        }, times)
+      }
+
+    }
+    let next = 0;
+    function scrollListen() {
+      console.log(next++)
+    }
+    document.addEventListener('scroll', debounce(scrollListen), false)
+  </script>
+</body>
+
+</html>
