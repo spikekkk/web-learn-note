@@ -3,6 +3,18 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin")
 const OptimizeCssAssetsWebpackPlugin = require("optimize-css-assets-webpack-plugin")
 const HtmlWebpackPlugin = require("html-webpack-plugin")
 
+/**
+ * 缓存:babel缓存
+ *options:{cacheDirectory: true,}
+ *文件资源缓存
+ hash:每次webpack构建时候会生成一个唯一的hash值
+ 问题: 因为js和css使用同一个hash值,如果hash值修改,会导致所有文件的缓存值失效
+ chunkhash:据chunk生成的hash值。如果打包来源于同一个chunk，那么hash值就一样
+  综上所述：开启缓存需要经历两个步骤：
+      1. 设置cacheDirectory: true
+      2. 在输出的数组中加上contenthash
+ */
+
 process.env.NODE_ENV = "production"
 
 // 复用loader
@@ -21,7 +33,7 @@ const commonCssLoader = [
 module.exports = {
     entry: "./src/js/index.js",
     output: {
-        filename: "js/built.js",
+        filename: "js/built[contenthash:10].js",
         path: resolve(__dirname, "build"),
     },
     module: {
@@ -77,8 +89,6 @@ module.exports = {
                                     },
                                 ],
                             ],
-                            // 开启babel 缓存
-                            // 第二次构建时, 读取之前的缓存
                             cacheDirectory: true,
                         },
                     },
@@ -109,7 +119,7 @@ module.exports = {
     },
     plugins: [
         new MiniCssExtractPlugin({
-            filename: "css/built.css",
+            filename: "css/built[contenthash:10].css",
         }),
         new OptimizeCssAssetsWebpackPlugin(),
         new HtmlWebpackPlugin({
@@ -121,4 +131,5 @@ module.exports = {
         }),
     ],
     mode: "production",
+    devtool: "source-map",
 }
