@@ -3,17 +3,16 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin")
 const OptimizeCssAssetsWebpackPlugin = require("optimize-css-assets-webpack-plugin")
 const HtmlWebpackPlugin = require("html-webpack-plugin")
 
-/*
-tree shaking 去除无用代码,使得体积更小
-前提: 1.必须使用es6模块 2. 开启production环境
-作用: 减少代码体积
-在package.json中配置 
-      "sideEffects": false 所有代码都没有副作用（都可以进行tree shaking）
-        问题：可能会把css / @babel/polyfill （副作用）文件干掉，所以采用下面的一行形式
-      "sideEffects": ["*.css", "*.less"]（加上这句话表示不移除css和less文件）
-
-
-
+/**
+ * 缓存:babel缓存
+ *options:{cacheDirectory: true,}
+ *文件资源缓存
+ hash:每次webpack构建时候会生成一个唯一的hash值
+ 问题: 因为js和css使用同一个hash值,如果hash值修改,会导致所有文件的缓存值失效
+ chunkhash:据chunk生成的hash值。如果打包来源于同一个chunk，那么hash值就一样
+  综上所述：开启缓存需要经历两个步骤：
+      1. 设置cacheDirectory: true
+      2. 在输出的数组中加上contenthash
  */
 
 process.env.NODE_ENV = "production"
