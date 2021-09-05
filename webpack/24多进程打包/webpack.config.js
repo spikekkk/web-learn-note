@@ -1,0 +1,152 @@
+const { resolve } = require("path")
+const MiniCssExtractPlugin = require("mini-css-extract-plugin")
+const OptimizeCssAssetsWebpackPlugin = require("optimize-css-assets-webpack-plugin")
+const HtmlWebpackPlugin = require("html-webpack-plugin")
+const WorkboxWebpackPlugin = require("workbox-webpack-plugin")
+/*
+pwa:渐进式网络开发应用程序--离线可访问
+ */
+
+process.env.NODE_ENV = "production"
+
+// 复用loader
+const commonCssLoader = [
+    MiniCssExtractPlugin.loader,
+    "css-loader",
+    {
+        loader: "postcss-loader",
+        options: {
+            ident: "postcss",
+            plugins: () => [require("postcss-preset-env")()],
+        },
+    },
+]
+
+module.exports = {
+    entry: "./src/js/index.js",
+    output: {
+        filename: "js/built[contenthash:10].js",
+        path: resolve(__dirname, "build"),
+    },
+    module: {
+        rules: [
+            {
+                test: /\.js$/,
+                exclude: /node_modules/,
+                // 优先执行
+                enforce: "pre",
+                loader: "eslint-loader",
+                options: {
+                    fix: true,
+                },
+            },
+            {
+                /*
+     以下loader只会匹配一个（这样子便不会只需要一个loader的时候将所有的loader遍历一遍了，可以提高速度）
+      注意：不能有两个配置处理同一种类型文件
+      比如我们的bable-loader和eslint-loader都要使用，那么我们将eslint-loader提取出来放到oneOf前面，
+      这样前面的eslint-loader执行完毕之后再从oneOf里面找到bable-loader执行
+        */
+                oneOf: [
+                    {
+                        test: /\.css$/,
+                        use: [...commonCssLoader],
+                    },
+                    {
+                        test: /\.less$/,
+                        use: [...commonCssLoader, "less-loader"],
+                    },
+                    /*
+            正常来讲，一个文件只能被一个loader处理。
+            当一个文件要被多个loader处理，那么一定要指定loader执行的先后顺序：
+              先执行eslint 在执行babel
+          */
+                    {
+                        test: /\.js$/,
+                        exclude: /node_modules/,
+
+                        use: [
+                            /*开启多进程打包
+                             进程启动大概为600ms，进程通信也有开销。
+                只有工作消耗时间比较长，才需要多进程打包
+                            */
+                            // "thread-loader",
+                            {
+                                loader: "thread-loader",
+                                options: {
+                                    workers: 2, // 进程俩
+                                },
+                            },
+                            {
+                                loader: "babel-loader",
+                                options: {
+                                    presets: [
+                                        [
+                                            "@babel/preset-env",
+                                            {
+                                                useBuiltIns: "usage",
+                                                corejs: {
+                                                    version: 3,
+                                                },
+                                                targets: {
+                                                    chrome: "60",
+                                                    firefox: "50",
+                                                },
+                                            },
+                                        ],
+                                    ],
+                                    cacheDirectory: true,
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        test: /\.(jpg|png|gif)/,
+                        loader: "url-loader",
+                        options: {
+                            limit: 8 * 1024,
+                            name: "[hash:10].[ext]",
+                            outputPath: "imgs",
+                            esModule: false,
+                        },
+                    },
+                    {
+                        test: /\.html$/,
+                        loader: "html-loader",
+                    },
+                    {
+                        exclude: /\.(js|css|less|html|jpg|png|gif)/,
+                        loader: "file-loader",
+                        options: {
+                            outputPath: "media",
+                        },
+                    },
+                ],
+            },
+        ],
+    },
+    plugins: [
+        new MiniCssExtractPlugin({
+            filename: "css/built[contenthash:10].css",
+        }),
+        new OptimizeCssAssetsWebpackPlugin(),
+        new HtmlWebpackPlugin({
+            template: "./src/index.html",
+            minify: {
+                collapseWhitespace: true,
+                removeComments: true,
+            },
+        }),
+        new WorkboxWebpackPlugin.GenerateSW({
+            /**
+             1. 帮助 servicework快速启动
+             2. 删除旧的serviceworker
+             生成一个serviceworker配置文件
+             */
+            clientsClaim: true,
+            skipWaiting: true,
+        }),
+    ],
+    mode: "production",
+    devtool: "source-map",
+}
