@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src="https://unpkg.com/vue@next"></script>
+</head>
+
+<body>
+  <div id="app">
+    {{title}}
+    {{state.title}}
+  </div>
+  <script>
+    /*
+    1.函数式: 类型支持更好,ts
+    2.标准化,简化,一致性:render 函数, sync修饰符,指令定义 ,v-modle调整
+    3.tree-shaking
+    4.复用性: composition-api
+    5.性能优化:响应式,编译器变化
+    6. 扩展性:自定义渲染器
+    */
+    const { createApp, reactive } = Vue
+    const app = createApp({
+      data() {
+        return {
+          title: 'hello vue3'
+        }
+      },
+      setup() {
+        const state = reactive({
+          title: 'hello vue3!!!'
+        })
+        return {
+          state
+        }
+      }
+    })
+
+    app.mount('#app')
+  </script>
+</body>
+
+</html>

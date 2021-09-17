@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+
+</head>
+
+<body>
+  <div id="app">
+
+  </div>
+  <script>
+    /*
+    createApp 返回的应用实例式什么样子
+    暴漏出vue
+    */
+    const Vue = {
+      createApp(options) {
+        // 返回app实例
+        return {
+          mount(selector) {
+            /*
+            mount 的任务是什么?
+            需要将组件配置解析为dom
+            追加到宿主元素上去
+            
+            */
+            // 找到宿主元素
+            const parent = document.querySelector(selector)
+            //通过render函数实现解析dom
+            if (!options.render) {
+              options.render = this.compile(parent.innerHtml)
+            }
+            //兼容options api
+            if (options.setup) {
+              this.setupState = options.setup()
+            } else {
+              this.data = options.data()
+            }
+            // proxy
+            //确定render中数据从哪获取
+            // 当前组件实例的this被代理到这
+            this.proxy = new Proxy(this, {
+              get(targer, key) {
+                if (key in targer.setupState) {
+                  return targer.setupState[key]
+                } else {
+                  return targer.data[key]
+                }
+              },
+              set(target, key, val) {
+                if (key in target.setupState) {
+                  target.setupState[key] = val
+                } else {
+                  target.data[key] = val
+                }
+              }
+            })
+            // 获取要渲染的数据
+            const el = options.render.call(this.proxy)
+            //追加到宿主元素上去
+            parent.innerHtml = ''
+            parent.appendChild(el)
+          },
+          compile(template) {
+            //暂时放弃解析方法
+            return function render() {
+              const h3 = document.createElement('h3')
+              h3.textContent = this.title
+              return h3
+            }
+
+          }
+        }
+      }
+    }
+  </script>
+  <script>
+    /*
+    1.函数式: 类型支持更好,ts
+    2.标准化,简化,一致性:render 函数, sync修饰符,指令定义 ,v-modle调整
+    3.tree-shaking
+    4.复用性: composition-api
+    5.性能优化:响应式,编译器变化
+    6. 扩展性:自定义渲染器
+    */
+    const { createApp } = Vue
+    const app = createApp({
+      data() {
+        return {
+          title: 'hello vue3'
+        }
+      },
+      setup() {
+        const state = {
+          title: 'hello vue3!!!'
+        }
+        return {
+          ...state
+        }
+      }
+    })
+
+    app.mount('#app')
+  </script>
+</body>
+
+</html>
