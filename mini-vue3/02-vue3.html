@@ -10,70 +10,105 @@
 </head>
 
 <body>
-  <div id="app">
-
-  </div>
+  <div id="app"> </div>
   <script>
+    // 接受obj,代理它,使他成为响应式
+    function reactive(obj) {
+      // vue基于proxy
+      return new Proxy(obj, {
+        set(target, key, val) {
+          console.log('set', key)
+          target[key] = val
+          app.update()
+        },
+        get(target, key) {
+          console.log('get', key)
+          return target[key]
+
+        }
+      })
+    }
     /*
     createApp 返回的应用实例式什么样子
     暴漏出vue
     */
     const Vue = {
       createApp(options) {
-        // 返回app实例
-        return {
-          mount(selector) {
-            /*
-            mount 的任务是什么?
-            需要将组件配置解析为dom
-            追加到宿主元素上去
-            
-            */
-            // 找到宿主元素
-            const parent = document.querySelector(selector)
-            //通过render函数实现解析dom
-            if (!options.render) {
-              options.render = this.compile(parent.innerHtml)
-            }
-            //兼容options api
-            if (options.setup) {
-              this.setupState = options.setup()
-            } else {
-              this.data = options.data()
-            }
-            // proxy
-            //确定render中数据从哪获取
-            // 当前组件实例的this被代理到这
-            this.proxy = new Proxy(this, {
-              get(targer, key) {
-                if (key in targer.setupState) {
-                  return targer.setupState[key]
-                } else {
-                  return targer.data[key]
-                }
-              },
-              set(target, key, val) {
-                if (key in target.setupState) {
-                  target.setupState[key] = val
-                } else {
-                  target.data[key] = val
-                }
-              }
-            })
-            // 获取要渲染的数据
-            const el = options.render.call(this.proxy)
-            //追加到宿主元素上去
-            parent.innerHtml = ''
-            parent.appendChild(el)
+        //暴漏给浏览器平台的createApp
+        const renderer = Vue.createRenderer({
+          querySelector(selector) {
+            return document.querySelector(selector)
           },
-          compile(template) {
-            //暂时放弃解析方法
-            return function render() {
-              const h3 = document.createElement('h3')
-              h3.textContent = this.title
-              return h3
-            }
+          insert(child, parent, anchor) {
+            return parent.insertBefore(child, anchor || null)
+          }
+        })
+        return renderer.createApp(options)
 
+      },
+      // 做节点操作
+      createRenderer({ querySelector, insert }) {
+        return {
+          createApp(options) {
+            return {
+              mount(selector) {
+                /*
+                mount 的任务是什么?
+                需要将组件配置解析为dom
+                追加到宿主元素上去
+                
+                */
+                // 找到宿主元素
+                const parent = querySelector(selector)
+                //通过render函数实现解析dom
+                if (!options.render) {
+                  options.render = this.compile(parent.innerHtml)
+                }
+                //兼容options api
+                if (options.setup) {
+                  this.setupState = options.setup()
+                } else {
+                  this.data = options.data()
+                }
+                // proxy
+                //确定render中数据从哪获取
+                // 当前组件实例的this被代理到这
+                this.proxy = new Proxy(this, {
+                  get(targer, key) {
+                    if (key in targer.setupState) {
+                      return targer.setupState[key]
+                    } else {
+                      return targer.data[key]
+                    }
+                  },
+                  set(target, key, val) {
+                    if (key in target.setupState) {
+                      target.setupState[key] = val
+                    } else {
+                      target.data[key] = val
+                    }
+                  }
+                })
+
+                this.update = function () {
+                  // 获取要渲染的数据
+                  const el = options.render.call(this.proxy)
+                  //追加到宿主元素上去
+                  parent.innerHtml = ''
+                  insert(el, parent)
+                }
+                this.update()
+              },
+              compile(template) {
+                //暂时放弃解析方法
+                return function render() {
+                  const h3 = document.createElement('h3')
+                  h3.textContent = this.title
+                  return h3
+                }
+
+              }
+            }
           }
         }
       }
@@ -96,9 +131,13 @@
         }
       },
       setup() {
-        const state = {
-          title: 'hello vue3!!!'
-        }
+        const state = reactive({
+          title: ' vue3!!!hello'
+        })
+
+        setTimeout(() => {
+          state.title = 'vue3 hello!!!'
+        }, 3000)
         return {
           ...state
         }
