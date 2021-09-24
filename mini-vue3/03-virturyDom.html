@@ -86,6 +86,12 @@
         }
       }
     }
+
+    function h(tag, props, children) {
+      return { tag, props, children }
+
+    }
+
     /*
     createApp 返回的应用实例式什么样子
     暴漏出vue
@@ -99,13 +105,16 @@
           },
           insert(child, parent, anchor) {
             return parent.insertBefore(child, anchor || null)
+          },
+          createElement(tag) {
+            return document.createElement(tag)
           }
         })
         return renderer.createApp(options)
 
       },
       // 做节点操作
-      createRenderer({ querySelector, insert }) {
+      createRenderer({ querySelector, insert, createElement }) {
         return {
           createApp(options) {
             return {
@@ -149,20 +158,54 @@
                 })
 
                 this.update = effect(() => {
-                  // 获取要渲染的数据
-                  const el = options.render.call(this.proxy)
-                  //追加到宿主元素上去
-                  parent.innerHtml = ''
-                  insert(el, parent)
+                  // // 获取要渲染的数据
+                  // const el = options.render.call(this.proxy)
+                  // //追加到宿主元素上去
+                  // parent.innerHtml = ''
+                  // insert(el, parent)
+                  // 获取虚拟dom
+                  const vnode = options.render.call(this.proxy)
+                  //mounted
+                  if (!this.isMounted) {
+                    // mounted
+                    // vnode=>dom 将虚拟转换为真实
+                    const el = this.createElm(vnode)
+                    parent.innerHtml = ''
+                    insert(el, parent)
+                    this.isMounted = true
+                  } else {
+                    //update
+                    //diff
+                    this.patch(this._vnode, vnode)
+                  }
+                  this._vnode = vnode
                 })
                 this.update()
+              },
+              createElm(vnode) {
+                // 创建根节点
+                const el = createElement(vnode.tag)
+                if (typeof vnode.children === 'string') {
+                  // 没有子元素
+                  el.textContent = vnode.children
+                } else {
+                  //递归创建子元素
+                  vnode.children.forEach(child => {
+                    insert(this.createElm(child), el)
+                  })
+
+                }
+                vnode.el = el
+                return el
               },
               compile(template) {
                 //暂时放弃解析方法
                 return function render() {
-                  const h3 = document.createElement('h3')
-                  h3.textContent = this.title
-                  return h3
+                  // const h3 = document.createElement('h3')
+                  // h3.textContent = this.title
+                  // return h3
+                  // 返回vnode
+                  return h('h3', null, this.title)
                 }
 
               }
