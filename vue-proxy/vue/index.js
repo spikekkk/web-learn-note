@@ -4,7 +4,6 @@ vue2.0 在vue原型上添加方法--prototype
 
 import { initState } from "./init"
 function Vue(options) {
-    console.log(this)
     this._init(options)
 }
 

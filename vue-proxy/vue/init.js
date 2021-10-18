@@ -1,6 +1,6 @@
 import proxyData from "./proxy"
+import observe from "./observe"
 function initState(vm) {
-    console.log(vm)
     const options = vm.$options
     if (options.data) {
         initData(vm)
@@ -17,6 +17,8 @@ function initData(vm) {
     for (let key in data) {
         proxyData(vm, "_data", key)
     }
+    // 启用观察者模式
+    observe(vm._data)
 }
 
 export { initState }
